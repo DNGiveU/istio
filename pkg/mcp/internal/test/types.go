@@ -1,4 +1,4 @@
-// Copyright 2018 Istio Authors
+// Copyright Istio Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -20,10 +20,10 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"github.com/gogo/protobuf/types"
-	"github.com/gogo/status"
 	"google.golang.org/grpc/codes"
 
 	mcp "istio.io/api/mcp/v1alpha1"
+	"istio.io/istio/pkg/mcp/status"
 )
 
 type FakeTypeBase struct{ Info string }
@@ -37,9 +37,11 @@ func (f *FakeTypeBase) Unmarshal(in []byte) error {
 	return nil
 }
 
-type FakeType0 struct{ FakeTypeBase }
-type FakeType1 struct{ FakeTypeBase }
-type FakeType2 struct{ FakeTypeBase }
+type (
+	FakeType0 struct{ FakeTypeBase }
+	FakeType1 struct{ FakeTypeBase }
+	FakeType2 struct{ FakeTypeBase }
+)
 
 type UnmarshalErrorType struct{ FakeTypeBase }
 
@@ -73,11 +75,12 @@ type Fake struct {
 	TypeURL    string
 }
 
-func MakeRequest(collection, nonce string, errorCode codes.Code) *mcp.RequestResources {
+func MakeRequest(incremental bool, collection, nonce string, errorCode codes.Code) *mcp.RequestResources {
 	req := &mcp.RequestResources{
 		SinkNode:      Node,
 		Collection:    collection,
 		ResponseNonce: nonce,
+		Incremental:   incremental,
 	}
 	if errorCode != codes.OK {
 		req.ErrorDetail = status.New(errorCode, "").Proto()
@@ -85,12 +88,13 @@ func MakeRequest(collection, nonce string, errorCode codes.Code) *mcp.RequestRes
 	return req
 }
 
-func MakeResources(collection, version, nonce string, removed []string, fakes ...*Fake) *mcp.Resources {
+func MakeResources(incremental bool, collection, version, nonce string, removed []string, fakes ...*Fake) *mcp.Resources {
 	r := &mcp.Resources{
 		Collection:        collection,
 		Nonce:             nonce,
 		RemovedResources:  removed,
 		SystemVersionInfo: version,
+		Incremental:       incremental,
 	}
 	for _, fake := range fakes {
 		r.Resources = append(r.Resources, *fake.Resource)
@@ -162,7 +166,6 @@ var (
 func init() {
 	proto.RegisterType((*FakeType0)(nil), FakeType0MessageName)
 	proto.RegisterType((*FakeType1)(nil), FakeType1MessageName)
-	proto.RegisterType((*FakeType2)(nil), FakeType2MessageName)
 	proto.RegisterType((*FakeType2)(nil), FakeType2MessageName)
 	proto.RegisterType((*UnmarshalErrorType)(nil), UnmarshalErrorMessageName)
 

@@ -1,4 +1,4 @@
-// Copyright 2019  Istio Authors
+// Copyright Istio Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,6 +15,8 @@
 package internal
 
 import (
+	"encoding/json"
+	"errors"
 	"regexp"
 	"testing"
 	"time"
@@ -22,19 +24,17 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var (
-	items = []struct {
-		key string
-		val int
-	}{
-		{"collection/1", 1},
-		{"collection/2", 2},
-		{"collection/3", 3},
-		{"collection/4", 4},
-		{"collection/5", 5},
-		{"collection/6", 6},
-	}
-)
+var items = []struct {
+	key string
+	val int
+}{
+	{"collection/1", 1},
+	{"collection/2", 2},
+	{"collection/3", 3},
+	{"collection/4", 4},
+	{"collection/5", 5},
+	{"collection/6", 6},
+}
 
 func TestUniqueQueue_InitialState(t *testing.T) {
 	depth := 5
@@ -118,7 +118,6 @@ func getScheduledItem(t *testing.T, q *UniqueQueue) interface{} {
 	case <-time.After(time.Second):
 		t.Fatal("timeout waiting for scheduled response")
 	}
-	t.Fatal("unreachable")
 	return nil
 }
 
@@ -342,5 +341,14 @@ func TestUniqueQueue_Dump(t *testing.T) {
 
 	if diff := cmp.Diff(got, want); diff != "" {
 		t.Fatalf("\n got %v \nwant %v\n diff %v", got, want, diff)
+	}
+
+	jsonMarshalDumpHook = func(v interface{}) ([]byte, error) { return nil, errors.New("unmarhsal error") }
+	defer func() { jsonMarshalDumpHook = json.Marshal }()
+
+	want = ""
+	got = q.Dump()
+	if got != want {
+		t.Fatalf("wrong output on json marshal error\n got %v \nwant %v", got, want)
 	}
 }

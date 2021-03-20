@@ -1,4 +1,4 @@
-// Copyright 2018 Istio Authors
+// Copyright Istio Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -15,8 +15,6 @@
 package test
 
 import (
-	"fmt"
-
 	"google.golang.org/grpc/credentials"
 )
 
@@ -33,7 +31,6 @@ func (f *FakeAuthChecker) Check(authInfo credentials.AuthInfo) error {
 }
 
 func (f *FakeAuthChecker) AuthType() string {
-	fmt.Println("XXX", f.AllowError)
 	if f.AllowError != nil {
 		return "disallowed"
 	}
